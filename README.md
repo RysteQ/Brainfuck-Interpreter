@@ -2,7 +2,7 @@
 
 ---
 
-This project contains the code for the *[brainfuck](https://en.wikipedia.org/wiki/Brainfuck)* interpreter written in the *[C programming language](https://en.wikipedia.org/wiki/C_(programming_language))*, There are also some **sample programs included** in this repository for you to use !
+This project contains the code for the *[brainfuck](https://en.wikipedia.org/wiki/Brainfuck)* interpreter written in the *[C programming language](https://en.wikipedia.org/wiki/C_(programming_language))*. There are also some **sample programs included** in this repository for you to use !
 
 #### The programs included are
 

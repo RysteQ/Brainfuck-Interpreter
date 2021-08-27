@@ -23,6 +23,19 @@ void displayProgramInformationData(struct programInformation program);
 #pragma endregion declareFuncs
 
 
+/*
+Name: brainfuck.c
+Input: Filename
+Output: None
+Description: This is my implementation of the brainfuck interpeter written in C, it takes the name of the input file, saves the
+data of the file to the programInformation struct, and after that is done it starts executing the program in the
+brainfuckInterpreter function.
+
+Function order: initProgramInformationStruct -> readFileData -> brainfuckInterpreter
+*/
+
+
+
 int main(int argc, char** argv) {
     if (argc == 1) {
         printf("No input file detected !\n");

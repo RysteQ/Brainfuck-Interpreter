@@ -17,9 +17,6 @@ void initProgramInformationStruct(struct programInformation* toInit);
 void readFileData(FILE* inputFile, struct programInformation* program);
 void brainfuckInterpreter(struct programInformation program);
 
-// debug functions
-void displayProgramInformationData(struct programInformation program);
-
 #pragma endregion declareFuncs
 
 
@@ -153,15 +150,6 @@ void brainfuckInterpreter(struct programInformation program) {
         }
 
         programCounter++;
-    }
-}
-
-// debug function
-void displayProgramInformationData(struct programInformation program) {
-    printf("Total bytes: %i\n", program.programSize);
-
-    for (int i = 0; i < program.programSize; i++) {
-        printf("%c", *(program.programData + i));
     }
 }
 

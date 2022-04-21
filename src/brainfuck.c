@@ -1,156 +1,165 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MEMORY_SIZE 256
 
-struct programInformation {
-    int programSize;
-    char* programData;
-    char memory[MEMORY_SIZE];
-};
+#define MEMORY_SIZE 32768
 
 
 #pragma region declareFuncs
 
-// runtime functions
-void initProgramInformationStruct(struct programInformation* toInit);
-void readFileData(FILE* inputFile, struct programInformation* program);
-void brainfuckInterpreter(struct programInformation program);
+char *readFile(const char *filename);
+void incrementMemoryCell(char *memory, int offset);
+void decrementMemoryCell(char *memory, int offset);
+void nextCell(int *offset);
+void previousCell(int *offset);
+void printChar(char *memory, int offset);
+void getChar(char *memory, int offset);
+void startLoop(char *memory, int offset, char *program, int *programCounter);
+void endLoop(char *memory, int offset, char *program, int *programCounter);
 
 #pragma endregion declareFuncs
 
 
-/*
-Name: brainfuck.c
-Input: Filename
-Output: None
-Description: This is my implementation of the brainfuck interpeter written in C, it takes the name of the input file, saves the
-data of the file to the programInformation struct, and after that is done it starts executing the program in the
-brainfuckInterpreter function.
-
-Function order: initProgramInformationStruct -> readFileData -> brainfuckInterpreter
-*/
-
-
-
 int main(int argc, char** argv) {
-    if (argc == 1) {
-        printf("No input file detected !\n");
-        return -1;
-    }
-
-    FILE *inputFile = fopen(argv[1], "r");
-
-    struct programInformation program;  
-    initProgramInformationStruct(&program);
-    readFileData(inputFile, &program);
-    fclose(inputFile);
-
-    brainfuckInterpreter(program);
-
-    return 0;
-}
-
-
-#pragma region funcs
-
-// runtime function
-void initProgramInformationStruct(struct programInformation* toInit) {
-    for (int i = 0; i < MEMORY_SIZE; i++)
-        toInit->memory[i] = 0;
-
-    toInit->programData = malloc(sizeof(char));
-    toInit->programSize = 1;
-}
-
-// runtime function
-void readFileData(FILE* inputFile, struct programInformation* program) {
-    char inputChar;
-
-    while ((inputChar = fgetc(inputFile)) != EOF) {
-        program->programData = realloc(program->programData, program->programSize);
-        *(program->programData + (program->programSize++) - 1) = inputChar;
-    }
-
-    (program->programSize)--;
-}
-
-// runtime function
-void brainfuckInterpreter(struct programInformation program) {
-    int programCounter = 0;
-    int memoryPointer = 0;
-    int toSkipBrackets = 0;
-    char userInput;
-
-    while (programCounter < program.programSize) {
-        switch(*(program.programData + programCounter)) {
-            case '.':
-                printf("%c", program.memory[memoryPointer]);
-                break;
-
-            case ',':
-                scanf("%c", &userInput);
-                program.memory[memoryPointer] = userInput;
-                break;
-
-            case '+':
-                program.memory[memoryPointer]++;
-                break;
-
-            case '-':
-                program.memory[memoryPointer]--;
-                break;
-
-            case '>':
-                memoryPointer++;
-                break;
-
-            case '<':
-                memoryPointer--;
-                break;
-
-            case '[':
-                if (program.memory[memoryPointer] == 0) {
-                    do {
-                        while (programCounter < program.programSize) {
-                            if (*(program.programData + (++programCounter)) == ']') {
-                                if (toSkipBrackets == 0) {
-                                    break;
-                                } toSkipBrackets--;
-                            } else if (*(program.programData + programCounter) == '[') {
-                                toSkipBrackets++;
-                            }
-                        }
-                    } while (toSkipBrackets != 0);
-                }
-
-                break;
-            
-            case ']':
-                if (program.memory[memoryPointer] != 0) {
-                    do {
-                        while (programCounter > 0) {
-                            if (*(program.programData + programCounter--) == '[') {
-                                if (toSkipBrackets == 0) {
-                                    break;
-                                } toSkipBrackets--;
-                            } else if (*(program.programData + programCounter) == ']') {
-                                toSkipBrackets++;
-                            }
-                        }
-                    } while (toSkipBrackets != 0);
-                }
-
-                break;
-            
-            default:
-                printf("Invalid input data at character %i, character is %c\n", (programCounter + 1), *(program.programData + programCounter));
-                programCounter = program.programSize;
-                break;
+        if (argc == 0) {
+                printf("No input file\n");
+                return -1;
         }
 
-        programCounter++;
-    }
+        char *memory = calloc(MEMORY_SIZE, sizeof(char));
+        char *program = readFile(argv[1]);
+        int programCounter = 0;
+        int offset = 0;
+
+        while (*(program + programCounter) != '\0') {
+                char command = *(program + programCounter);
+
+                switch (command) {
+                        case '+':
+                                incrementMemoryCell(memory, offset);
+                                break;
+
+                        case '-':
+                                decrementMemoryCell(memory, offset);
+                                break;
+
+                        case '>':
+                                nextCell(&offset);
+                                break;
+
+                        case '<':
+                                previousCell(&offset);
+                                break;
+
+                        case '.':
+                                printChar(memory, offset);
+                                break;
+
+                        case ',':
+                                getChar(memory, offset);
+                                break;
+
+                        case '[':
+                                startLoop(memory, offset, program, &programCounter);
+                                break;
+
+                        case ']':
+                                endLoop(memory, offset, program, &programCounter);
+
+                                if (programCounter < 0)
+                                        return -2;
+
+                                break;
+
+                        default:
+                                break;
+                }
+
+                programCounter++;
+        }
+
+        return 0;
 }
 
-#pragma endregion funcs
+
+#pragma region functions
+
+char *readFile(const char *filename) {
+        FILE *inputFile;
+        char *toReturn;
+        int  offset;
+        char inputChar;
+
+        inputFile = fopen(filename, "r");
+        toReturn = malloc(sizeof(char) * 1);
+        offset = 0;
+
+        if (inputFile == NULL) {
+                printf("File does not exist\n");
+                exit(-3);
+        }
+
+        do {
+                inputChar = fgetc(inputFile);
+                *(toReturn + offset) = inputChar;
+                toReturn = realloc(toReturn, (offset + 2) * sizeof(char));
+                offset++;
+        } while (inputChar != 255);
+
+        *(toReturn + offset) = '\0';
+        fclose(inputFile);
+
+        return toReturn;
+}
+
+void incrementMemoryCell(char *memory, int offset) {
+        (*(memory + offset))++;
+}
+
+void decrementMemoryCell(char *memory, int offset) {
+        (*(memory + offset))--;
+}
+
+void nextCell(int *offset) {
+        if (*offset != MEMORY_SIZE - 1)
+                (*offset)++;
+}
+
+void previousCell(int *offset) {
+        if (*offset != 0)
+                (*offset)--;
+}
+
+void printChar(char *memory, int offset) {
+        printf("%c", *(memory + offset));
+}
+
+void getChar(char *memory, int offset) {
+        scanf("%c", (memory + offset));
+}
+
+void startLoop(char *memory, int offset, char *program, int *programCounter) {
+        if (*(memory + offset) != 0)
+                return;
+
+        char currentInstruction = *(program + *programCounter);
+
+        while (currentInstruction != '\0' && currentInstruction != ']') {
+                (*programCounter)++;
+                currentInstruction = *(program + *programCounter);
+        }
+}
+
+void endLoop(char *memory, int offset, char *program, int *programCounter) {
+        if (*(memory + offset) == 0)
+                return;
+
+        char currentInstruction = *(program + *programCounter);
+
+        while (*programCounter != -1 && currentInstruction != '[') {
+                (*programCounter)--;
+                currentInstruction = *(program + *programCounter);
+        }
+}
+
+#pragma endregion functions

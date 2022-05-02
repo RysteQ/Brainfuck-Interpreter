@@ -143,8 +143,14 @@ void startLoop(char *memory, int offset, char *program, int *programCounter) {
                 return;
 
         char currentInstruction = *(program + *programCounter);
+        int toSkip = 0;
 
-        while (currentInstruction != '\0' && currentInstruction != ']') {
+        while (currentInstruction != '\0' && currentInstruction != ']' && toSkip != 0) {
+                if (currentInstruction == '[')
+                        toSkip--;
+                else if (currentInstruction == ']')
+                        toSkip++;
+
                 (*programCounter)++;
                 currentInstruction = *(program + *programCounter);
         }
@@ -155,8 +161,14 @@ void endLoop(char *memory, int offset, char *program, int *programCounter) {
                 return;
 
         char currentInstruction = *(program + *programCounter);
+        int toSkip = 1;
 
-        while (*programCounter != -1 && currentInstruction != '[') {
+        while (*programCounter != -1 && currentInstruction != '[' && toSkip != 0) {
+                if (currentInstruction == ']')
+                        toSkip--;
+                else if (currentInstruction == '[')
+                        toSkip++;
+
                 (*programCounter)--;
                 currentInstruction = *(program + *programCounter);
         }
